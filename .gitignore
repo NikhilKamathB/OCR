@@ -7,8 +7,6 @@
 **/logs/**
 !**/data/raw/
 !**/data/raw/.gitkeep
-!**/data/raw/information-extraction/
-!**/data/raw/information-extraction/.gitkeep
 !**/data/processed/
 !**/data/processed/.gitkeep
 !**/runs/pretrained-models/
