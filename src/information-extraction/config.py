@@ -29,7 +29,7 @@ config.RESIZE_HEIGHT = 1080
 
 # model hyperparameters.
 config.LEARNING_RATE = 1e-3
-config.EPOCHS = 750
+config.EPOCHS = 500
 config.BATCH_SIZE = 128
 
 # logging.

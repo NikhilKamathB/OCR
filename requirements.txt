@@ -7,8 +7,6 @@ numpy
 pandas
 matplotlib
 opencv-python
-torch
-torchvision
 pytorch-lightning
 scipy
 networkx
@@ -16,7 +14,10 @@ scikit-learn
 mlflow
 psycopg2-binary
 google-cloud-storage
+google-cloud-vision
 # Install manually
+# torch==1.10.1
+# torchvision==0.11.2
 # torch-scatter -f https://data.pyg.org/whl/torch-1.10.1+cu102.html
 # torch-sparse -f https://data.pyg.org/whl/torch-1.10.1+cu102.html
 # torch-geometric
