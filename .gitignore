@@ -5,6 +5,7 @@
 **/data/**
 **/runs/**
 **/logs/**
+**/mlruns/**
 !**/data/raw/
 !**/data/raw/.gitkeep
 !**/data/processed/
@@ -14,6 +15,9 @@
 !**/runs/models/
 !**/runs/models/.gitkeep
 !**/logs/.gitkeep
+*.env*
+**/secrets/**
+!**/secrets/.gitkeep
 
 ### Django ###
 *.log

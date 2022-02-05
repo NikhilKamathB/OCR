@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+  labels:
+    app: mlflow-server
+    type: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-server
+  template:
+    metadata:
+      labels:
+        app: mlflow-server
+        type: web
+    spec:
+      volumes:
+        - name: cloudsql
+          emptyDir: {}
+        - name: mlflow-sql
+          secret:
+            secretName: mlflow-sql-secrets
+        - name: ssl-certs
+          hostPath:
+            path: /etc/ssl/certs
+        - name: storage
+          emptyDir: {}
+        - name: mlflow-storage
+          secret:
+            secretName: mlflow-storage-secrets
+      containers:
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.16
+          command: ["/cloud_sql_proxy", "-instances=som-insureka:asia-southeast2:mlserver=tcp:5499", "-credential_file=/secrets/cloudsql/credentials.json"] 
+          volumeMounts: 
+            - name: mlflow-sql
+              mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+        - name: mlflow-server
+          image: gcr.io/som-insureka/mlflow-server:latest
+          imagePullPolicy: Always
+          command: ["mlflow", "server", "-h", "0.0.0.0", "--backend-store-uri", "$(BACKEND_STORE_URI)", "--default-artifact-root", "$(DEFAULT_ARTIFACT_ROOT)"]
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: mlflow-storage
+              mountPath: /secrets/storage
+              readOnly: true
+          env:
+            - name: BACKEND_STORE_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: BACKEND_STORE_URI
+            - name: DEFAULT_ARTIFACT_ROOT
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: DEFAULT_ARTIFACT_ROOT
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: GOOGLE_APPLICATION_CREDENTIALS
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1024Mi
+          livenessProbe:
+            initialDelaySeconds: 10
+            exec:
+              command:
+                - /bin/sh
+                - -c 
+                - "pidof -x mlflow"

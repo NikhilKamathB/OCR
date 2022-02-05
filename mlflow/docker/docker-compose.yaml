@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  db:
+    restart: always
+    image: postgres:latest
+    container_name: mlflow-db
+    expose:
+      - ${POSTGRES_PORT}
+    ports:
+      - ${HOST_POSTGRES_PORT}:${POSTGRES_PORT}
+    networks:
+      - backend
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - /data/orchestration/docker/db:/var/lib/postgresql
+
+  web:
+    restart: always
+    build: .
+    image: mlflow-server
+    container_name: mlflow-server
+    ports:
+      - ${HOST_MLFLOW_PORT}:${MLFLOW_PORT}
+    networks:
+      - backend
+    command: mlflow server -h 0.0.0.0 --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB} --default-artifact-root ${GS_BUCKET} --port ${MLFLOW_PORT}
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/storage.json
+    depends_on:
+      - db
+
+networks:
+  backend:
+    driver: bridge

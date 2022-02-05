@@ -1,0 +1,4 @@
+resources:
+- mlflow-persistent-volume.yaml
+- mlflow-persistent-volume-claim.yaml
+- mlflow-server.yaml

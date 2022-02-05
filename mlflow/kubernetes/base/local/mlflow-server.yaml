@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+  labels:
+    app: mlflow-server
+    type: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-server
+  template:
+    metadata:
+      labels:
+        app: mlflow-server
+        type: web
+    spec:
+      volumes:
+        - name: storage
+          emptyDir: {}
+        - name: mlflow-storage
+          secret:
+            secretName: mlflow-storage-secrets
+        - name: postgres-volume-mount
+          persistentVolumeClaim:
+            claimName: mlflow-pvc
+      containers:
+        - name: postgres
+          image: postgres:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-volume-mount
+              mountPath: /var/lib/postgresql
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: POSTGRES_DB
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+        - name: mlflow-server
+          image: gcr.io/som-insureka/mlflow-server:latest
+          imagePullPolicy: Always
+          command: ["mlflow", "server", "-h", "0.0.0.0", "--backend-store-uri", "$(BACKEND_STORE_URI)", "--default-artifact-root", "$(DEFAULT_ARTIFACT_ROOT)"]
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: mlflow-storage
+              mountPath: /secrets/storage
+              readOnly: true
+          env:
+            - name: BACKEND_STORE_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: BACKEND_STORE_URI
+            - name: DEFAULT_ARTIFACT_ROOT
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: DEFAULT_ARTIFACT_ROOT
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: GOOGLE_APPLICATION_CREDENTIALS
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1024Mi
+          livenessProbe:
+            initialDelaySeconds: 10
+            exec:
+              command:
+                - /bin/sh
+                - -c 
+                - "pidof -x mlflow"
