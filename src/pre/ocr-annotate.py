@@ -1,4 +1,3 @@
-import io
 import os
 import json
 import argparse
@@ -8,23 +7,11 @@ from dotenv import load_dotenv
 from google.cloud import vision
 from google.cloud.vision_v1 import types
 from google.protobuf.json_format import MessageToDict
+from utils import *
 from config import config as conf
 
 
 load_dotenv()
-
-def mk_dir(dir=None):
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-
-def image_to_byte_array(image: Image, format: str):
-    imgByteArr = io.BytesIO()
-    if not format:
-        image.save(imgByteArr, format=image.format)
-    else:
-        image.save(imgByteArr, format=format)
-    imgByteArr = imgByteArr.getvalue()
-    return imgByteArr
 
 def convert_format(text_response, item):
     texts = []
@@ -86,7 +73,7 @@ def get_bboxes(image, item, format=None):
     ocr_response = gv_get_entities(image_bytes, item)
     return ocr_response
 
-def ocr(input_directory=None, ouput_directory=None):
+def ocr_engine(input_directory=None, ouput_directory=None):
     print(f'Input directory - {input_directory}\nOutput directory - {ouput_directory}')
     mk_dir(ouput_directory)
     for item in tqdm([_ for _ in os.listdir(input_directory) if '.jpg' in _.lower() or '.png' in _.lower() or '.jpeg' in _.lower()]):
@@ -103,7 +90,7 @@ def ocr(input_directory=None, ouput_directory=None):
             f.write(f"{label}\n")
 
 def main(args=None):
-    ocr(args.input_directory, args.output_directory)
+    ocr_engine(args.input_directory, args.output_directory)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google cloud vision API - OCR.')
