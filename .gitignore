@@ -6,10 +6,6 @@
 **/runs/**
 **/logs/**
 **/mlruns/**
-!**/data/raw/
-!**/data/raw/.gitkeep
-!**/data/processed/
-!**/data/processed/.gitkeep
 !**/runs/pretrained-models/
 !**/runs/pretrained-models/.gitkeep
 !**/runs/models/
