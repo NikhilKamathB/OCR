@@ -2,7 +2,6 @@ import os
 import json
 import argparse
 from PIL import Image
-from tqdm import tqdm
 from dotenv import load_dotenv
 from google.cloud import vision
 from google.cloud.vision_v1 import types
@@ -37,9 +36,17 @@ def convert_format(text_response, item):
             bboxes['cx'], bboxes['cy'] = cx, cy
             bboxes['bbox_w'] = xmax - xmin
             bboxes['bbox_h'] = ymax - ymin
-            bboxes['cx_yolo'], bboxes['cy_yolo'] = cx / image_width, cy / image_height
-            bboxes['bbox_w_yolo'] = (xmax - xmin) / image_width
-            bboxes['bbox_h_yolo'] = (ymax - ymin) / image_height
+            bboxes['x1_normalized'] = bboxes['x1'] / image_width
+            bboxes['y1_normalized'] = bboxes['y1'] / image_height
+            bboxes['x2_normalized'] = bboxes['x2'] / image_width
+            bboxes['y2_normalized'] = bboxes['y2'] / image_height
+            bboxes['x3_normalized'] = bboxes['x3'] / image_width
+            bboxes['y3_normalized'] = bboxes['y3'] / image_height
+            bboxes['x4_normalized'] = bboxes['x4'] / image_width
+            bboxes['y4_normalized'] = bboxes['y4'] / image_height
+            bboxes['cx_normalized'], bboxes['cy_normalized'] = cx / image_width, cy / image_height
+            bboxes['bbox_w_normalized'] = (xmax - xmin) / image_width
+            bboxes['bbox_h_normalized'] = (ymax - ymin) / image_height
             texts.append(bboxes)
     annotations = {
         'image': item,
@@ -76,18 +83,16 @@ def get_bboxes(image, item, format=None):
 def ocr_engine(input_directory=None, ouput_directory=None):
     print(f'Input directory - {input_directory}\nOutput directory - {ouput_directory}')
     mk_dir(ouput_directory)
-    for item in tqdm([_ for _ in os.listdir(input_directory) if '.jpg' in _.lower() or '.png' in _.lower() or '.jpeg' in _.lower()]):
+    for ind, item in enumerate([_ for _ in os.listdir(input_directory) if '.jpg' in _.lower() or '.png' in _.lower() or '.jpeg' in _.lower()]):
         file_name = item.split('.')[0]
+        if os.path.exists(os.path.join(input_directory, file_name + '_ocr' + '.json')):
+            print(f'{ind+1}. Skipping {item} ...')
+            continue
+        print(f'{ind+1}. Processing {item} ...')
         image = Image.open(os.path.join(input_directory, item))
         ocr_response = get_bboxes(image, item)
-        with open(os.path.join(ouput_directory, file_name + '.json'), "w") as f: 
+        with open(os.path.join(ouput_directory, file_name + '_ocr' + '.json'), 'w') as f: 
             json.dump(ocr_response, f)
-        with open(os.path.join(ouput_directory, file_name + '.txt'), "w") as f:
-            for detection in ocr_response['annotations']:
-                f.write(f"0 {detection['cx_yolo']} {detection['cy_yolo']} {detection['bbox_w_yolo']} {detection['bbox_h_yolo']}\n")
-    with open(os.path.join(ouput_directory, 'classes.txt'), "w") as f:
-        for label in conf.LABEL:
-            f.write(f"{label}\n")
 
 def main(args=None):
     ocr_engine(args.input_directory, args.output_directory)
