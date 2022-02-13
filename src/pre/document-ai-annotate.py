@@ -24,18 +24,18 @@ def get_entities(document_text, entities, item):
                 x3, y3 = float(page_ref['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][0].get('y', 0))
                 x4, y4 = float(page_ref['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][0].get('y', 0))
                 page_ref_list.append(
-                    {
-                        'page_ref_ind': _,
-                        'x1': x1,
-                        'y1': y1,
-                        'x2': x2,
-                        'y2': y2,
-                        'x3': x3,
-                        'y3': y3,
-                        'x4': x4,
-                        'y4': y4
-                    }
-                )
+                        {
+                            'page_ref_ind': _,
+                            'x1': x1,
+                            'y1': y1,
+                            'x2': x2,
+                            'y2': y2,
+                            'x3': x3,
+                            'y3': y3,
+                            'x4': x4,
+                            'y4': y4
+                        }
+                    )
         except Exception as e:
             is_valid = False
             print(f'Error occurred with {item} at pageAnchor extraction [entity] - {e}')
