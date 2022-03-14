@@ -1,4 +1,0 @@
-[core]
-    remote = ocr-data-hangar
-['remote "ocr-data-hangar"']
-    url = gs://data-hangar/ocr/dvc

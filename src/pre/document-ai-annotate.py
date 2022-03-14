@@ -11,6 +11,9 @@ from config import config as conf
 
 load_dotenv()
 
+def str2bool(v):
+    return v.lower() in ("yes", "Yes", "YES", "y", "true", "True", "TRUE", "t", "1")
+
 def get_entities(document_text, entities, item):
     entities_list = []
     for entity in entities:
@@ -20,9 +23,9 @@ def get_entities(document_text, entities, item):
         try:
             for _, page_ref in enumerate(entity['pageAnchor']['pageRefs']):
                 x1, y1 = float(page_ref['boundingPoly']['normalizedVertices'][0].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][0].get('y', 0))
-                x2, y2 = float(page_ref['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][0].get('y', 0))
-                x3, y3 = float(page_ref['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][0].get('y', 0))
-                x4, y4 = float(page_ref['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][0].get('y', 0))
+                x2, y2 = float(page_ref['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][1].get('y', 0))
+                x3, y3 = float(page_ref['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][2].get('y', 0))
+                x4, y4 = float(page_ref['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(page_ref['boundingPoly']['normalizedVertices'][3].get('y', 0))
                 page_ref_list.append(
                         {
                             'page_ref_ind': _,
@@ -71,9 +74,9 @@ def get_key_value_form_fields(document_text, form_fields, item):
         except Exception as e:
             print(f'Error occurred with {item} at key textAnchor extraction [form field] - {e}')
         key_x1, key_y1 = float(key['boundingPoly']['normalizedVertices'][0].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        key_x2, key_y2 = float(key['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        key_x3, key_y3 = float(key['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        key_x4, key_y4 = float(key['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][0].get('y', 0))
+        key_x2, key_y2 = float(key['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][1].get('y', 0))
+        key_x3, key_y3 = float(key['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][2].get('y', 0))
+        key_x4, key_y4 = float(key['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(key['boundingPoly']['normalizedVertices'][3].get('y', 0))
         key_confidence = float(key['confidence'])
         value_string = ''
         try:
@@ -82,9 +85,9 @@ def get_key_value_form_fields(document_text, form_fields, item):
         except Exception as e:
             print(f'Error occurred with {item} at value textAnchor extraction [form field] - {e}')
         value_x1, value_y1 = float(value['boundingPoly']['normalizedVertices'][0].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        value_x2, value_y2 = float(value['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        value_x3, value_y3 = float(value['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        value_x4, value_y4 = float(value['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][0].get('y', 0))
+        value_x2, value_y2 = float(value['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][1].get('y', 0))
+        value_x3, value_y3 = float(value['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][2].get('y', 0))
+        value_x4, value_y4 = float(value['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(value['boundingPoly']['normalizedVertices'][3].get('y', 0))
         value_confidence = float(value['confidence'])
         form_dict['key'] = {
             'text': key_string,
@@ -124,13 +127,13 @@ def get_tokens(document_text, tokens):
         for segment in token['layout']['textAnchor']['textSegments']:
             string += document_text[int(segment.get('startIndex', 0)): int(segment.get('endIndex', 0))]
         x1, y1 = float(token['layout']['boundingPoly']['vertices'][0].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][0].get('y', 0))
-        x2, y2 = float(token['layout']['boundingPoly']['vertices'][1].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][0].get('y', 0))
-        x3, y3 = float(token['layout']['boundingPoly']['vertices'][2].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][0].get('y', 0))
-        x4, y4 = float(token['layout']['boundingPoly']['vertices'][3].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][0].get('y', 0))
+        x2, y2 = float(token['layout']['boundingPoly']['vertices'][1].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][1].get('y', 0))
+        x3, y3 = float(token['layout']['boundingPoly']['vertices'][2].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][2].get('y', 0))
+        x4, y4 = float(token['layout']['boundingPoly']['vertices'][3].get('x', 0)), float(token['layout']['boundingPoly']['vertices'][3].get('y', 0))
         n_x1, n_y1 = float(token['layout']['boundingPoly']['normalizedVertices'][0].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        n_x2, n_y2 = float(token['layout']['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        n_x3, n_y3 = float(token['layout']['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][0].get('y', 0))
-        n_x4, n_y4 = float(token['layout']['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][0].get('y', 0))
+        n_x2, n_y2 = float(token['layout']['boundingPoly']['normalizedVertices'][1].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][1].get('y', 0))
+        n_x3, n_y3 = float(token['layout']['boundingPoly']['normalizedVertices'][2].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][2].get('y', 0))
+        n_x4, n_y4 = float(token['layout']['boundingPoly']['normalizedVertices'][3].get('x', 0)), float(token['layout']['boundingPoly']['normalizedVertices'][3].get('y', 0))
         confidence = float(token['layout']['confidence'])
         token_list.append({
             'text': string,
@@ -158,7 +161,7 @@ def get_tokens(document_text, tokens):
         })
     return token_list
 
-def document_ai(input_directory=None, ouput_directory=None):
+def document_ai(input_directory=None, ouput_directory=None, refresh=False):
     print(f'Input directory - {input_directory}\nOutput directory - {ouput_directory}')
     mk_dir(ouput_directory)
     client_options = {"api_endpoint": "{}-documentai.googleapis.com".format(os.getenv('GCP_PROCESSOR_LOCATION', 'us'))}
@@ -166,16 +169,24 @@ def document_ai(input_directory=None, ouput_directory=None):
     name = f"projects/{os.getenv('GCP_PROJECT_ID', None)}/locations/{os.getenv('GCP_PROCESSOR_LOCATION', 'us')}/processors/{os.getenv('GCP_PROCESSOR_ID', None)}"
     for ind, item in enumerate([_ for _ in os.listdir(input_directory) if '.jpg' in _.lower() or '.png' in _.lower() or '.jpeg' in _.lower()]):
         file_name = item.split('.')[0]
-        if os.path.exists(os.path.join(input_directory, file_name + '_document_ai' + '.json')):
-            print(f'{ind+1}. Skipping {item} ...')
-            continue
-        print(f'{ind+1}. Processing {item} ...')
         res = {}
-        image = Image.open(os.path.join(input_directory, item))
-        image_bytes = image_to_byte_array(image)
-        document = {"content": image_bytes, "mime_type": "image/jpeg"}
-        request = {"name": name, "raw_document": document}
-        result = json.loads(MessageToJson(client.process_document(request=request)._pb))
+        if not refresh:
+            print(f'{ind+1}. Document AI - enabled | Processing {item} ...')
+            if os.path.exists(os.path.join(input_directory, file_name + '_document_ai' + '.json')):
+                print(f'{ind+1}. Skipping {item} ...')
+                continue
+            image = Image.open(os.path.join(input_directory, item))
+            image_bytes = image_to_byte_array(image)
+            document = {"content": image_bytes, "mime_type": "image/jpeg"}
+            request = {"name": name, "raw_document": document}
+            result = json.loads(MessageToJson(client.process_document(request=request)._pb))
+        else:
+            print(f'{ind+1}. Document AI - disabled | Processing {item} ...')
+            assert os.path.exists(os.path.join(input_directory, file_name + '_document_ai' + '.json')) == True, "When '--refresh' / '-r' is set, corresponding .json file must exist."
+            with open(os.path.join(input_directory, file_name + '_document_ai' + '.json'), 'r') as f:
+                result = json.load(f)
+                result = result['raw']
+            os.remove(os.path.join(input_directory, file_name + '_document_ai' + '.json'))      
         form_fields, tokens, image_width, image_height = [], [], [], []
         for _, page in enumerate(result['document']['pages']):
             form_fields.append(get_key_value_form_fields(result['document']['text'], page['formFields'], item))
@@ -192,11 +203,12 @@ def document_ai(input_directory=None, ouput_directory=None):
             json.dump(res, f)
 
 def main(args=None):
-    document_ai(args.input_directory, args.output_directory)
+    document_ai(args.input_directory, args.output_directory, args.refresh)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Google Document AI - Information extraction (Pass the image in JPG/JPEG format).')
     parser.add_argument('-i', '--input_directory', type=str, default=conf.DATA_DIR_RAW_TRAIN, metavar="\b", help='Input image directory')
     parser.add_argument('-o', '--output_directory', type=str, default=conf.DATA_DIR_ANNOTATION_TRAIN, metavar="\b", help='Output directory')
+    parser.add_argument('-r', '--refresh', type=str2bool, default='n', metavar="\b", help='Refresh json results of Document AI?')
     args = parser.parse_args()
     main(args=args)
