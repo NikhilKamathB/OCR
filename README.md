@@ -8,7 +8,6 @@ Design an OCR from scratch to extract useful fields from an Invoice.
 - Docker / Microk8s installed.
 - GCP account: enable cloud vision API and Document AI API and setup appropriate service accounts.
 - MLFlow: hosted on Docker / Microk8s.
-- DVC (Data versioning tool).
 
 ## Folder Structure
 ```
@@ -38,15 +37,18 @@ OCR
         |- models (holds logged models)
         |- pretrained-models (holds downloaded models)
     |- src
-        |- information-extraction (OCR - information extraction pipeline)
+        |- information-extraction (OCR pipeline - information extraction from the detected and recognized texts)
         |- pre (this folder containing scripts ought to be run before stepping into the OCR pipeline)
-    |- data.dvc (result of dvc configuration)
+        |- text-detection (OCR pipeline - text detection in scene)
     |- requirements.txt (pip requirements that must be installed prior to running this pipeline)
 ```
 
 ## Tasks
-- [ ]  Data acquisition.
-- [ ]  Data Annotation.
+- [X]  Data acquisition.
+    - Download relevant datasets.
+    - `cd ./src/pre`, run `ocr-annotate.py` (for OCR) and `document-ai-annotate.py` (for Entity recognition) to generate true labels from GCP - Document AI service. This step is optional and we use it to run on our custom dataset.
+    - All out data is stored in GCS. Run the following command to download data (not accessible to the public) - `gsutil -m cp -r "gs://data-hangar/ocr/data" .`
+- [ ]  Data Annotation/Preparation.
     - [ ]  Text Detection.
     - [ ]  Text Recognition.
     - [ ]  Information Extraction.
