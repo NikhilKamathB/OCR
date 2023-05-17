@@ -58,10 +58,5 @@ OCR
 - [ ]  Integration of Blocks.
 - [ ]  Web Application.
 
-## Future Work
-* Use better models.
-* Improve dataset.
-* Extend this application to other related domains.
-
-## GitHub Link
-[https://github.com/NikhilKamathB/OCR](https://github.com/NikhilKamathB/OCR)
+## Environment Variables
+* GOOGLE_APPLICATION_CREDENTIALS

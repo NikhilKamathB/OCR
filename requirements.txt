@@ -1,4 +1,3 @@
-jupyterlab
 easydict
 dateutils
 python-dotenv
@@ -12,13 +11,9 @@ scipy
 networkx
 scikit-learn
 mlflow
-psycopg2-binary
 google-cloud-storage
 google-cloud-vision
 google-cloud-documentai
-labelImg
-dvc
-'dvc[gs]'
 # Install manually
 # torch==1.10.1
 # torchvision==0.11.2
