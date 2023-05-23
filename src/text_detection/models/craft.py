@@ -61,5 +61,5 @@ class CRAFT(nn.Module):
 if __name__ == "__main__":
     craft_model = CRAFT()
     out, feature = craft_model(torch.randn(1, 3, 768, 768))
-    print(out.shape)
-    print(feature.shape)
+    print(f"`out` tensor shape containing region score and affinity score: {out.shape}")
+    print(f"`feature` tensor shape representing upconv part: {feature.shape}")
