@@ -18,6 +18,33 @@ def get_annotated_file(image_path: str) -> str:
     assert image_path is not None, 'Image path is None. Provide a valid image path.'
     return image_path.replace('.jpg', '_ocr.json')
 
+def split_data(df: pd.DataFrame, split_ratio: list = [0.6, 0.2]) -> tuple:
+    '''
+        Split data into train, validation and test sets.
+        Input params:
+            df: pandas dataframe.
+            split_ratio: list of split ratios. Total items in this list can be max 2, one corresponding
+                        to train split and the other to validation split. Test split would
+                        be the remaining. Sum of items in `split_ratio` must be less than 1.0.
+        Returns: tuple of dataframes - (train, val) if length of `split_ratio` is 1 and (train, val, test)
+                if the length of `split_ratio` is 2.
+    '''
+    assert len(split_ratio) <= 2, 'Length of `split_ratio` must be less than or equal to 2.'
+    assert sum(split_ratio) < 1.0, 'Sum of items in `split_ratio` must be less than 1.0.'
+    df = df.sample(frac=1, random_state=42)
+    train_split_ratio = split_ratio[0]
+    if len(split_ratio) == 2:
+        val_split_ratio = split_ratio[1]
+    else:
+        val_split_ratio = None
+    train_df = df.iloc[:int(len(df)*train_split_ratio)]
+    if val_split_ratio is None:
+        val_df = df.iloc[int(len(df)*train_split_ratio): ]
+        return (train_df, val_df)
+    val_df = df.iloc[int(len(df)*train_split_ratio): int(len(df)*(train_split_ratio + val_split_ratio))]
+    test_df = df.iloc[int(len(df)*(train_split_ratio + val_split_ratio)): ]
+    return (train_df, val_df, test_df)
+
 def get_df(data_dir: str) -> pd.DataFrame:
     '''
         Get dataframe representing the dataset.
@@ -64,18 +91,24 @@ def denormalize_image(image: np.ndarray, mean: tuple = (0.485, 0.456, 0.406),
     image = np.clip(image, 0, 255).astype(np.uint8)
     return image
 
-def get_gaussian_image(image: np.ndarray, mean: float = 0.0, stddev: float = 0.5) -> np.ndarray:
+def get_gaussian_image(image: np.ndarray, mean: float = 0.0, stddev: float = 0.5, epsilon: float = 1e-6) -> np.ndarray:
     '''
         Get gaussian image.
         Input params:
             image: np.ndarray of shape (image_height, image_width, channels[optional]).
+            mean: mean of gaussian distribution.
+            stddev: standard deviation of gaussian distribution.
+            epsilon: epsilon value to avoid division by zero.
         Returns: gaussian image.
     '''
+    h, w = image.shape[: 2]
+    if h == 0 or w == 0:
+        return image
     x = np.linspace(-1, 1, image.shape[1])
     y = np.linspace(-1, 1, image.shape[0])
     x, y = np.meshgrid(x, y)
     image = norm.pdf(np.sqrt(x**2 + y**2), mean, stddev)
-    image = (image - np.min(image)) / (np.max(image) - np.min(image))
+    image = (image - np.min(image)) / max((np.max(image) - np.min(image)), epsilon)
     return image
 
 def visualize_image(image_path: str, annotation_file_path: str = None, 
@@ -122,13 +155,14 @@ def visualize_ndarray_image(images: list, opacity: list) -> None:
     plt.show()
 
 
-def generate_region_affinity_heatmap(image_path: str = None, image_annotations_path: str = None, image: Image = None) -> np.ndarray:
+def generate_region_affinity_heatmap(image_path: str = None, image_annotations_path: str = None, image: np.ndarray = None, heatmap_size: tuple = None) -> np.ndarray:
     '''
         Generate region heatmap for image.
         Input params:
             image_path: path to image file.
             image_annotations_path: path to annotation file.
             image: optional image of type np.ndarray.
+            heatmap_size: size of heatmap (height, width).
         Returns: np.ndarray of shape (2, image_height, image_width).
     '''
     assert image_path is not None or image is not None, 'Either `image_path` or `image` should be provided.'
@@ -137,8 +171,11 @@ def generate_region_affinity_heatmap(image_path: str = None, image_annotations_p
     if image_annotations_path is None:
         image_annotations_path = get_annotated_file(image_path)
     if image is None:
-        image = Image.open(image_path)
-    image_width, image_height = image.size
+        image = np.asarray(Image.open(image_path))
+    if heatmap_size is None:
+        image_height, image_width, _ = image.shape
+    else:
+        image_height, image_width = heatmap_size
     region_heatmap = np.zeros((image_height, image_width))
     affinity_heatmap = np.zeros((image_height, image_width))
     with open(image_annotations_path, 'r') as file:
@@ -154,19 +191,23 @@ def generate_region_affinity_heatmap(image_path: str = None, image_annotations_p
             max(int(annotation['y3_normalized']*image_height), int(annotation['y4_normalized']*image_height))
         w1, w2 = min(int(annotation['x1_normalized']*image_width), int(annotation['x4_normalized']*image_width)), \
             max(int(annotation['x2_normalized']*image_width), int(annotation['x3_normalized']*image_width))
+        w1, h1 = max(w1, 0), max(h1, 0)
+        w2, h2 = min(w2, image_width), min(h2, image_height)
         word_split_length = (w2 - w1) / len(annotation['label'])
-        for i in range(len(annotation['label'])):
-            wx = w1 + int(word_split_length * (i))
-            if i == len(annotation['label']) - 1:
-                wy = wx + int(word_split_length)
-            else:
-                wy = w2
-            region_heatmap[h1: h2, wx: wy] = get_gaussian_image(
-                image=np.zeros((h2 - h1, wy - wx))
+        if w1 != w2 and h1 != h2 and h2 - h1 > 0 and w2 - w1 > 0:
+            for i in range(len(annotation['label'])):
+                wx = w1 + int(word_split_length * (i))
+                if i == len(annotation['label']) - 1:
+                    wy = wx + int(word_split_length)
+                else:
+                    wy = w2
+                if wy - wx > 0:
+                    region_heatmap[h1: h2, wx: wy] = get_gaussian_image(
+                        image=np.zeros((h2 - h1, wy - wx))
+                    )
+            affinity_heatmap[h1: h2, w1: w2] = get_gaussian_image(
+                image=np.zeros((h2 - h1, w2 - w1))
             )
-        affinity_heatmap[h1: h2, w1: w2] = get_gaussian_image(
-            image=np.zeros((h2 - h1, w2 - w1))
-        )
     return np.reshape(
         np.concatenate((region_heatmap, affinity_heatmap), axis=0), 
         (2, image_height, image_width))

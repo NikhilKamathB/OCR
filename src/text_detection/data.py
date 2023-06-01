@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torchvision import transforms as T
-from transforms import *
+from .transforms import *
 
 
 class OCRDataset(Dataset):
@@ -65,10 +65,11 @@ class OCRDataset(Dataset):
 class OCRData:
 
     def __init__(self, 
-                resize: tuple = (512, 512),
                 train_data: pd.DataFrame = None,
                 val_data: pd.DataFrame = None,
                 test_data: pd.DataFrame = None,
+                resize: tuple = (768, 768),
+                heatmap_size: tuple = (384, 384),
                 train_batch_size: int = 32,
                 val_batch_size: int = 32,
                 test_batch_size: int = 32,
@@ -84,10 +85,11 @@ class OCRData:
         '''
             Initial definition for the OCRData class.
             Input params:
-                resize - a tuple representing the size (height, width).
                 train_data - a pandas DataFrame representing the training data.
                 val_data - a pandas DataFrame representing the validation data.
                 test_data - a pandas DataFrame representing the test data.
+                resize - a tuple representing the size (height, width).
+                heatmap_size - a tuple representing the size (height, width) of the heatmap.
                 train_batch_size - an integer representing the batch size to use for training.
                 val_batch_size - an integer representing the batch size to use for validation.
                 test_batch_size - an integer representing the batch size to use for testing.
@@ -100,15 +102,20 @@ class OCRData:
                 num_workers - an integer representing the number of workers to use for loading data.
                 pin_memory - a boolean representing whether or not to pin memory.
         '''
-        self.resize = resize
         self.train_data = train_data
         self.val_data = val_data
         self.test_data = test_data
+        self.resize = resize
+        self.headmap_size = heatmap_size
         self.train_batch_size = train_batch_size
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
+        self.train_shuffle = train_shuffle
+        self.val_shuffle = val_shuffle
+        self.test_shuffle = test_shuffle
         self.overfit = overfit
         self.overfit_batch_size = overfit_batch_size
+        self.pin_memory = pin_memory
         self.num_workers = os.cpu_count() // 2 if num_workers is None else num_workers
         self.transforms = self.get_tranforms() if transforms is None else transforms
     
@@ -120,17 +127,17 @@ class OCRData:
         '''
         return {
             "train": T.Compose([
-                Resize(size=self.resize),
+                Resize(size=self.resize, heatmap_size=self.headmap_size),
                 Normalize(),
                 ToTensor()
             ]),
             "validate": T.Compose([
-                Resize(size=self.resize),
+                Resize(size=self.resize, heatmap_size=self.headmap_size),
                 Normalize(),
                 ToTensor()
             ]),
             "test": T.Compose([
-                Resize(size=self.resize),
+                Resize(size=self.resize, heatmap_size=self.headmap_size),
                 Normalize(),
                 ToTensor()
             ])
@@ -182,7 +189,7 @@ class OCRData:
         )
         return (train_loader, val_loader, test_loader)
 
-    def visualize(self, number_of_subplots: int = 8, columns: int = 4, rows: int = 2, figsize=(10, 10), alpha: float = 0.5) -> None:
+    def visualize(self, number_of_subplots: int = 8, columns: int = 4, rows: int = 2, figsize=(30, 10), alpha: float = 0.5) -> None:
         '''
             Visualize the output of the loader
             Input params:
@@ -200,9 +207,10 @@ class OCRData:
         image_idx = 0
         for r in range(rows):
             for c in range(0, columns, 2):
-                ax[r, c].imshow(image[image_idx])
+                ax[r, c].imshow(image[image_idx].permute(1, 2, 0))
                 ax[r, c].imshow(region_heatmap[image_idx], alpha=alpha)
                 ax[r, c].set_title(f"Image {image_idx} | Region Heatmap")
-                ax[r, c+1].imshow(image[image_idx])
+                ax[r, c+1].imshow(image[image_idx].permute(1, 2, 0))
                 ax[r, c+1].imshow(affinity_heatmap[image_idx], alpha=alpha)
                 ax[r, c+1].set_title(f"Image {image_idx} | Affinity Heatmap")
+                image_idx += 1

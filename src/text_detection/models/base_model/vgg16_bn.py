@@ -1,12 +1,8 @@
-import sys
-if "base_model" not in sys.path:
-    sys.path.append("base_model")
-
 import torch
 import torch.nn as nn
 from torchvision import models
 from collections import namedtuple
-from utils import InitializeModule
+from .utils import InitializeModule
 
 
 class VGG16_BN(torch.nn.Module):

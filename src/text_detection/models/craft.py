@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from base_model.vgg16_bn import VGG16_BN
-from base_model.utils import InitializeModule, DoubleConv2d
+from .base_model.vgg16_bn import VGG16_BN
+from .base_model.utils import InitializeModule, DoubleConv2d
 
 
 class CRAFT(nn.Module):

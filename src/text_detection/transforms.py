@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from PIL import Image
-from utils import normalize_image, generate_region_affinity_heatmap
+from .utils import normalize_image, generate_region_affinity_heatmap
 
 
 class Resize:
@@ -10,17 +10,22 @@ class Resize:
         Resize the image to a given size.
     '''
 
-    def __init__(self, size: tuple = (512, 512)) -> None:
+    def __init__(self, size: tuple = (512, 512), heatmap_size: tuple = (512, 512)) -> None:
         '''
             Initial definition for the Resize class.
             Input params:
                 size - a tuple representing the size (height, width) 
                        to resize the image to.
+                heatmap_size - a tuple representing the size (height, width) for
+                                the heatmap.
             Returns: None.
         '''
         assert isinstance(size, tuple), "`size` must be a tuple."
         assert isinstance(size[0], int) and isinstance(size[1], int), "`size` must be a tuple of integers."
+        assert isinstance(heatmap_size, tuple), "`heatmap_size` must be a tuple."
+        assert isinstance(heatmap_size[0], int) and isinstance(heatmap_size[1], int), "`heatmap_size` must be a tuple of integers." 
         self.size = size
+        self.heatmap_size = heatmap_size
     
     def __call__(self, instance: dict) -> dict:
         '''
@@ -28,12 +33,11 @@ class Resize:
             Returns: a dictionary representing a data instance with image resized.
         '''
         new_height, new_width = self.size
-        instance["image"] = instance["image"].resize((new_width, new_height))
+        instance["image"] = np.asarray(instance["image"].resize((new_width, new_height)))
         instance["region_heatmap"], instance["affinity_heatmap"] = \
             self._get_region_and_affinity_heatmap(
                 image_annotations_path=instance["annotations"], image=instance["image"]
             )
-        instance["image"] = np.array(instance["image"])
         return instance
 
     def _get_region_and_affinity_heatmap(self, image_annotations_path:str, image: Image) -> np.ndarray:
@@ -44,7 +48,7 @@ class Resize:
 
             Returns: a np.ndarray representing the region and affinity heatmap.
         '''
-        return generate_region_affinity_heatmap(image_annotations_path=image_annotations_path, image=image)
+        return generate_region_affinity_heatmap(image_annotations_path=image_annotations_path, image=image, heatmap_size=self.heatmap_size)
 
 
 class Normalize:
@@ -57,7 +61,7 @@ class Normalize:
         '''
             Input params: instance - a dictionary representing a data instance.
             Returns: a dictionary representing a data instance with image normalized.
-        '''
+        '''   
         instance["image"] = normalize_image(image=instance["image"])
         return instance
 
@@ -73,7 +77,7 @@ class ToTensor:
             Input params: instance - a dictionary representing a data instance.
             Returns: a dictionary representing a data instance with data converted to tensor.
         '''
-        instance["image"] = torch.from_numpy(np.array(instance["image"]))
-        instance["region_heatmap"] = torch.from_numpy(instance["region_heatmap"])
-        instance["affinity_heatmap"] = torch.from_numpy(instance["affinity_heatmap"])
+        instance["image"] = torch.permute(torch.from_numpy(np.array(instance["image"])).type(torch.float32), (2, 0, 1))
+        instance["region_heatmap"] = torch.from_numpy(instance["region_heatmap"]).type(torch.float32)
+        instance["affinity_heatmap"] = torch.from_numpy(instance["affinity_heatmap"]).type(torch.float32)
         return instance
