@@ -25,10 +25,15 @@ class JointMSELoss(nn.Module):
         '''
         batch_size = y_hat.size(0)
         num_maps = y_hat.size(1)
-        # print(y_hat.size())
-        # print(y.size())
+        # print(y.max())
+        # print(y_hat.max())
         maps_pred = y_hat.reshape(batch_size, num_maps, -1).split(1, dim=1)
         maps_gt = y.reshape(batch_size, num_maps, -1).split(1, dim=1)
+        # print(maps_pred[0].max())
+        # print(maps_pred[1].max())
+        # print(maps_gt[0].max())
+        # print(maps_gt[1].max())
+
         loss = 0
         for map in range(num_maps):
             map_pred = maps_pred[map].squeeze()
@@ -36,4 +41,5 @@ class JointMSELoss(nn.Module):
             # print(map_pred.size())
             # print(map_gt.size())
             loss += self.mse_loss(map_pred, map_gt)
+        # print(loss)
         return loss

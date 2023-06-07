@@ -1,4 +1,5 @@
 import os
+import cv2
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -80,7 +81,7 @@ class OCRData:
                 overfit: bool = False,
                 overfit_batch_size: int = 32,
                 num_workers: int = None,
-                pin_memory: bool = True
+                pin_memory: bool = False
                 ) -> None:
         '''
             Initial definition for the OCRData class.
@@ -106,7 +107,7 @@ class OCRData:
         self.val_data = val_data
         self.test_data = test_data
         self.resize = resize
-        self.headmap_size = heatmap_size
+        self.heatmap_size = heatmap_size
         self.train_batch_size = train_batch_size
         self.val_batch_size = val_batch_size
         self.test_batch_size = test_batch_size
@@ -127,17 +128,17 @@ class OCRData:
         '''
         return {
             "train": T.Compose([
-                Resize(size=self.resize, heatmap_size=self.headmap_size),
+                Resize(size=self.resize, heatmap_size=self.heatmap_size),
                 Normalize(),
                 ToTensor()
             ]),
             "validate": T.Compose([
-                Resize(size=self.resize, heatmap_size=self.headmap_size),
+                Resize(size=self.resize, heatmap_size=self.heatmap_size),
                 Normalize(),
                 ToTensor()
             ]),
             "test": T.Compose([
-                Resize(size=self.resize, heatmap_size=self.headmap_size),
+                Resize(size=self.resize, heatmap_size=self.heatmap_size),
                 Normalize(),
                 ToTensor()
             ])
@@ -207,10 +208,12 @@ class OCRData:
         image_idx = 0
         for r in range(rows):
             for c in range(0, columns, 2):
-                ax[r, c].imshow(image[image_idx].permute(1, 2, 0))
+                bg_image = image[image_idx].permute(1, 2, 0).numpy()
+                bg_image = cv2.resize(bg_image, (self.heatmap_size[1], self.heatmap_size[0]))
+                ax[r, c].imshow(bg_image)
                 ax[r, c].imshow(region_heatmap[image_idx], alpha=alpha)
                 ax[r, c].set_title(f"Image {image_idx} | Region Heatmap")
-                ax[r, c+1].imshow(image[image_idx].permute(1, 2, 0))
+                ax[r, c+1].imshow(bg_image)
                 ax[r, c+1].imshow(affinity_heatmap[image_idx], alpha=alpha)
                 ax[r, c+1].set_title(f"Image {image_idx} | Affinity Heatmap")
                 image_idx += 1

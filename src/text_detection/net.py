@@ -1,5 +1,6 @@
 import torch
 import pytorch_lightning as pl
+import matplotlib.pyplot as plt
 from .models.craft import CRAFT
 
 
@@ -19,6 +20,7 @@ class LitOCRModel(pl.LightningModule):
                  batch_size: int = 32,
                  verbose: bool = True,
                  freeze: bool = False,
+                 saved_model: str = None,
                  model_name: str = "craft") -> None:
         '''
             Initial definition for the LitOCRModel class.
@@ -32,6 +34,7 @@ class LitOCRModel(pl.LightningModule):
                 batch_size - an integer representing the batch size.
                 verbose - a boolean representing whether to print the printables.
                 freeze - a boolean representing whether to freeze the model.
+                saved_model - a string representing the path to the saved model.
                 model_name - name of the model.
             Returns: None.
         '''
@@ -45,7 +48,9 @@ class LitOCRModel(pl.LightningModule):
         self.batch_size = batch_size
         self.verbose = verbose
         self.freeze = freeze
+        self.saved_model = saved_model
         self.model = self.get_model(model_name=model_name)
+        self.load_torch_model()
         if self.verbose:
             print("Model Summary:\n", self.model)
     
@@ -60,6 +65,20 @@ class LitOCRModel(pl.LightningModule):
             return model(freeze=self.freeze)
         else:
             raise NotImplementedError(f"Model {model_name} not implemented.")
+    
+    def load_torch_model(self) -> None:
+        '''
+            This function loads a torch model.
+            Input params: None.
+            Returns: None.
+        '''
+        if self.saved_model is not None:
+            self.model.load_state_dict(torch.load(self.saved_model, map_location=torch.device("cpu")))
+            self.model.to(self.device)
+            if self.verbose:
+                print(f"Model loaded from {self.saved_model}.")
+        else:
+            print("No model loaded as `saved_model` not provided.")
 
     def forward(self, x: torch.Tensor) -> tuple:
         '''
@@ -70,6 +89,7 @@ class LitOCRModel(pl.LightningModule):
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         '''
+            Input params: None.
             Returns: an optimizer instance.
         '''
         optimizer = torch.optim.AdamW(
@@ -92,23 +112,26 @@ class LitOCRModel(pl.LightningModule):
 
     def train_dataloader(self) -> object:
         '''
+            Input params: None.
             Returns: a train dataLoader instance.
         '''
         return self.loaders["train"]
 
     def val_dataloader(self) -> object:
         '''
+            Input params: None.
             Returns: a validation dataLoader instance.
         '''
         return self.loaders["validation"]
 
     def test_dataloader(self) -> object:
         '''
+            Input params: None.
             Returns: a test dataLoader instance.
         '''
         return self.loaders["test"]
     
-    def execute(self, batch: tuple, log_msg: str, prog_bar: bool = True, on_step: bool = True, on_epoch: bool = True):
+    def execute(self, batch: tuple, log_msg: str, prog_bar: bool = True, on_step: bool = True, on_epoch: bool = True, mode: str = "train"):
         '''
             This function executes the model and logs the loss.
             Input params:
@@ -117,6 +140,7 @@ class LitOCRModel(pl.LightningModule):
                 prog_bar - a boolean representing whether to show the progress bar.
                 on_step - a boolean representing whether to show the progress bar on step.
                 on_epoch - a boolean representing whether to show the progress bar on epoch.
+                mode - a str representing the mode.
             Returns: a torch.Tensor instance.
         '''
         image, y_region_map, y_affinity_map = batch
@@ -146,7 +170,7 @@ class LitOCRModel(pl.LightningModule):
                 batch_idx - an int representing the batch index.
             Returns: a torch.Tensor instance.
         '''
-        return self.execute(batch=batch, log_msg="val_loss")
+        return self.execute(batch=batch, log_msg="val_loss", mode="validation")
 
     def test_step(self, batch: tuple, batch_idx: int) -> torch.Tensor:
         '''
@@ -155,7 +179,20 @@ class LitOCRModel(pl.LightningModule):
                 batch_idx - an int representing the batch index.
             Returns: a torch.Tensor instance.
         '''
-        return self.execute(batch=batch, log_msg="test_loss")
+        return self.execute(batch=batch, log_msg="test_loss", mode="test")
+
+    def on_test_epoch_end(self) -> None:
+        '''
+            This function is called at the end of the test epoch.
+            Here we visualize the output of the model.
+            Input params: None.
+            Returns: None.
+        '''
+        image, _, _ = next(iter(self.test_dataloader()))
+        image = image.to(self.device)
+        y_hat, _ = self.forward(x=image)
+        if self.verbose:
+            self.visualize_output(y_hat=y_hat)
 
     def get_progress_bar_dict(self) -> dict:
         '''
@@ -165,3 +202,28 @@ class LitOCRModel(pl.LightningModule):
         items.pop("v_num", None)
         items.pop("loss", None)
         return items
+
+    def visualize_output(self, y_hat: torch.Tensor, number_of_subplots: int = 8, columns: int = 4, rows: int = 2, figsize=(30, 10)) -> None:
+        '''
+            This function visualizes the output of the model.
+            Input params:
+                y_hat - a torch.Tensor instance.
+                number_of_subplots - an int representing the number of subplots.
+                columns - an int representing the number of columns.
+                rows - an int representing the number of rows.
+                figsize - a tuple representing the figure size.
+            Returns: None.
+        '''
+        assert number_of_subplots == columns * rows, "`number_of_subplots` must be equal to the product `columns` and `rows` for plotting convenience."
+        y_hat_cpu_numpy = y_hat.cpu().detach().numpy()
+        _, ax = plt.subplots(rows, columns, figsize=figsize)
+        image_idx = 0
+        for r in range(rows):
+            for c in range(0, columns, 2):
+                region_image = y_hat_cpu_numpy[image_idx, :, :, 0]
+                affinity_image = y_hat_cpu_numpy[image_idx, :, :, 1]
+                ax[r, c].imshow(region_image, cmap="gray")
+                ax[r, c].set_title("Region Map")
+                ax[r, c+1].imshow(affinity_image, cmap="gray")
+                ax[r, c+1].set_title("Affinity Map")
+                image_idx += 1

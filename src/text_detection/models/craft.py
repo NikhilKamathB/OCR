@@ -20,11 +20,11 @@ class CRAFT(nn.Module):
         super().__init__()
         initialize_module = InitializeModule()
         self.basenet = VGG16_BN(freeze=freeze)
-        self.upconv2d_1 = DoubleConv2d(in_channels=1024, mid_channels=512, out_channels=256)
-        self.upconv2d_2 = DoubleConv2d(in_channels=512, mid_channels=256, out_channels=128)
-        self.upconv2d_3 = DoubleConv2d(in_channels=256, mid_channels=128, out_channels=64)
-        self.upconv2d_4 = DoubleConv2d(in_channels=128, mid_channels=64, out_channels=32)
-        self.conv2d_final = nn.Sequential(
+        self.upconv1 = DoubleConv2d(in_channels=1024, mid_channels=512, out_channels=256)
+        self.upconv2 = DoubleConv2d(in_channels=512, mid_channels=256, out_channels=128)
+        self.upconv3 = DoubleConv2d(in_channels=256, mid_channels=128, out_channels=64)
+        self.upconv4 = DoubleConv2d(in_channels=128, mid_channels=64, out_channels=32)
+        self.conv_cls = nn.Sequential(
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
@@ -35,25 +35,25 @@ class CRAFT(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=16, out_channels=2, kernel_size=1)
         )
-        initialize_module.initialize(modules=self.upconv2d_1.modules())
-        initialize_module.initialize(modules=self.upconv2d_2.modules())
-        initialize_module.initialize(modules=self.upconv2d_3.modules())
-        initialize_module.initialize(modules=self.upconv2d_4.modules())
-        initialize_module.initialize(modules=self.conv2d_final.modules())
+        initialize_module.initialize(modules=self.upconv1.modules())
+        initialize_module.initialize(modules=self.upconv2.modules())
+        initialize_module.initialize(modules=self.upconv3.modules())
+        initialize_module.initialize(modules=self.upconv4.modules())
+        initialize_module.initialize(modules=self.conv_cls.modules())
     
     def forward(self, x: torch.Tensor) -> tuple:
         '''
             Input params: `x` - a tensor of shape (batch_size, channels, height, width).
             Returns: `x` - a tensor of shape (batch_size, channels, height, width).
         '''
-        block_1_out, block_2_out, block_3_out, block_4_out, block_5_out = self.basenet(x)
-        out = self.upconv2d_1(torch.cat((block_5_out, block_4_out), dim=1))
-        out = F.interpolate(out, size=block_3_out.size()[2:], mode='bilinear', align_corners=False)
-        out = self.upconv2d_2(torch.cat((out, block_3_out), dim=1))
-        out = F.interpolate(out, size=block_2_out.size()[2:], mode='bilinear', align_corners=False)
-        out = self.upconv2d_3(torch.cat((out, block_2_out), dim=1))
-        out = F.interpolate(out, size=block_1_out.size()[2:], mode='bilinear', align_corners=False)
-        feature = self.upconv2d_4(torch.cat((out, block_1_out), dim=1))
+        slice_1_out, slice_2_out, slice_3_out, slice_4_out, slice_5_out = self.basenet(x)
+        out = self.upconv2d_1(torch.cat((slice_5_out, slice_4_out), dim=1))
+        out = F.interpolate(out, size=slice_3_out.size()[2:], mode='bilinear', align_corners=False)
+        out = self.upconv2d_2(torch.cat((out, slice_3_out), dim=1))
+        out = F.interpolate(out, size=slice_2_out.size()[2:], mode='bilinear', align_corners=False)
+        out = self.upconv2d_3(torch.cat((out, slice_2_out), dim=1))
+        out = F.interpolate(out, size=slice_1_out.size()[2:], mode='bilinear', align_corners=False)
+        feature = self.upconv2d_4(torch.cat((out, slice_1_out), dim=1))
         out = self.conv2d_final(feature)
         return (out.permute(0, 2, 3, 1), feature)
 
