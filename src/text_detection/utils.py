@@ -111,6 +111,19 @@ def get_gaussian_image(image: np.ndarray, mean: float = 0.0, stddev: float = 0.5
     image = (image - np.min(image)) / max((np.max(image) - np.min(image)), epsilon)
     return image
 
+def get_solid_image(image: np.ndarray) -> np.ndarray:
+    '''
+        Get solid image.
+        Input params:
+            image: np.ndarray of shape (image_height, image_width, channels[optional]).
+        Returns: solid image.
+    '''
+    h, w = image.shape[: 2]
+    if h == 0 or w == 0:
+        return image
+    image = np.ones((h, w))
+    return image
+
 def visualize_image(image_path: str, annotation_file_path: str = None, 
                     annotation_color: tuple = (255, 0, 0)) -> None:
     '''
@@ -155,7 +168,9 @@ def visualize_ndarray_image(images: list, opacity: list) -> None:
     plt.show()
 
 
-def generate_region_affinity_heatmap(image_path: str = None, image_annotations_path: str = None, image: np.ndarray = None, heatmap_size: tuple = None) -> np.ndarray:
+def generate_region_affinity_heatmap(image_path: str = None, image_annotations_path: str = None, 
+                                    image: np.ndarray = None, heatmap_size: tuple = None,
+                                    fill_method: str = "gaussain") -> np.ndarray:
     '''
         Generate region heatmap for image.
         Input params:
@@ -163,6 +178,8 @@ def generate_region_affinity_heatmap(image_path: str = None, image_annotations_p
             image_annotations_path: path to annotation file.
             image: optional image of type np.ndarray.
             heatmap_size: size of heatmap (height, width).
+            fill_method: method to fill the heatmap. Possible values are `gaussian` and `solid`.
+                        default: `gaussian`.
         Returns: np.ndarray of shape (2, image_height, image_width).
     '''
     assert image_path is not None or image is not None, 'Either `image_path` or `image` should be provided.'
@@ -202,12 +219,22 @@ def generate_region_affinity_heatmap(image_path: str = None, image_annotations_p
                 else:
                     wy = w2
                 if wy - wx > 0:
-                    region_heatmap[h1: h2, wx: wy] = get_gaussian_image(
-                        image=np.zeros((h2 - h1, wy - wx))
-                    )
-            affinity_heatmap[h1: h2, w1: w2] = get_gaussian_image(
-                image=np.zeros((h2 - h1, w2 - w1))
-            )
+                    if fill_method == 'solid':
+                        region_heatmap[h1: h2, wx: wy] = get_solid_image(
+                            image=np.zeros((h2 - h1, wy - wx))
+                        )
+                    else:
+                        region_heatmap[h1: h2, wx: wy] = get_gaussian_image(
+                            image=np.zeros((h2 - h1, wy - wx))
+                        )
+            if fill_method == 'solid':
+                affinity_heatmap[h1: h2, w1: w2] = get_solid_image(
+                    image=np.zeros((h2 - h1, w2 - w1))
+                )
+            else:
+                affinity_heatmap[h1: h2, w1: w2] = get_gaussian_image(
+                    image=np.zeros((h2 - h1, w2 - w1))
+                )
     return np.reshape(
         np.concatenate((region_heatmap, affinity_heatmap), axis=0), 
         (2, image_height, image_width))

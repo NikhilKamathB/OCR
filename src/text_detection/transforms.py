@@ -10,7 +10,7 @@ class Resize:
         Resize the image to a given size.
     '''
 
-    def __init__(self, size: tuple = (512, 512), heatmap_size: tuple = (512, 512)) -> None:
+    def __init__(self, size: tuple = (512, 512), heatmap_size: tuple = (512, 512), fill_method: str = "gaussain") -> None:
         '''
             Initial definition for the Resize class.
             Input params:
@@ -18,6 +18,8 @@ class Resize:
                        to resize the image to.
                 heatmap_size - a tuple representing the size (height, width) for
                                 the heatmap.
+                fill_method - a string representing the method to use to fill the heatmap.
+                              default - "gaussian"
             Returns: None.
         '''
         assert isinstance(size, tuple), "`size` must be a tuple."
@@ -26,6 +28,7 @@ class Resize:
         assert isinstance(heatmap_size[0], int) and isinstance(heatmap_size[1], int), "`heatmap_size` must be a tuple of integers." 
         self.size = size
         self.heatmap_size = heatmap_size
+        self.fill_method = fill_method
     
     def __call__(self, instance: dict) -> dict:
         '''
@@ -48,7 +51,7 @@ class Resize:
 
             Returns: a np.ndarray representing the region and affinity heatmap.
         '''
-        return generate_region_affinity_heatmap(image_annotations_path=image_annotations_path, image=image, heatmap_size=self.heatmap_size)
+        return generate_region_affinity_heatmap(image_annotations_path=image_annotations_path, image=image, heatmap_size=self.heatmap_size, fill_method=self.fill_method)
 
 
 class Normalize:

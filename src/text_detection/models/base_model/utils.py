@@ -200,7 +200,7 @@ class DoubleConv2d(nn.Module):
             Returns: `None`.
         '''
         super().__init__()
-        self.conv2d = nn.Sequential(
+        self.conv = nn.Sequential(
             nn.Conv2d(in_channels + mid_channels, mid_channels, kernel_size=1),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
@@ -214,4 +214,4 @@ class DoubleConv2d(nn.Module):
             Input params: `x` - a tensor of shape (batch_size, in_channels, height, width).
             Returns: `x` - a tensor of shape (batch_size, out_channels, height, width).
         '''
-        return self.conv2d(x)
+        return self.conv(x)

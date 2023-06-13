@@ -81,7 +81,8 @@ class OCRData:
                 overfit: bool = False,
                 overfit_batch_size: int = 32,
                 num_workers: int = None,
-                pin_memory: bool = False
+                pin_memory: bool = False,
+                fill_method: str = "gaussian",
                 ) -> None:
         '''
             Initial definition for the OCRData class.
@@ -102,6 +103,7 @@ class OCRData:
                 overfit_batch_size - an integer representing the batch size to use for overfitting.
                 num_workers - an integer representing the number of workers to use for loading data.
                 pin_memory - a boolean representing whether or not to pin memory.
+                fill_method - a string representing the method to use for filling the heatmap, default is gaussian.
         '''
         self.train_data = train_data
         self.val_data = val_data
@@ -117,6 +119,7 @@ class OCRData:
         self.overfit = overfit
         self.overfit_batch_size = overfit_batch_size
         self.pin_memory = pin_memory
+        self.fill_method = fill_method
         self.num_workers = os.cpu_count() // 2 if num_workers is None else num_workers
         self.transforms = self.get_tranforms() if transforms is None else transforms
     
@@ -128,17 +131,17 @@ class OCRData:
         '''
         return {
             "train": T.Compose([
-                Resize(size=self.resize, heatmap_size=self.heatmap_size),
+                Resize(size=self.resize, heatmap_size=self.heatmap_size, fill_method=self.fill_method),
                 Normalize(),
                 ToTensor()
             ]),
             "validate": T.Compose([
-                Resize(size=self.resize, heatmap_size=self.heatmap_size),
+                Resize(size=self.resize, heatmap_size=self.heatmap_size, fill_method=self.fill_method),
                 Normalize(),
                 ToTensor()
             ]),
             "test": T.Compose([
-                Resize(size=self.resize, heatmap_size=self.heatmap_size),
+                Resize(size=self.resize, heatmap_size=self.heatmap_size, fill_method=self.fill_method),
                 Normalize(),
                 ToTensor()
             ])

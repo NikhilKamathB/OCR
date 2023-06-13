@@ -6,6 +6,7 @@
 **/runs/**
 **/logs/**
 **/mlruns/**
+**/downloaded_model/**
 !**/runs/pretrained-models/
 !**/runs/pretrained-models/.gitkeep
 !**/runs/models/

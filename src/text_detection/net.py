@@ -1,6 +1,7 @@
 import torch
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 from .models.craft import CRAFT
 
 
@@ -21,6 +22,7 @@ class LitOCRModel(pl.LightningModule):
                  verbose: bool = True,
                  freeze: bool = False,
                  saved_model: str = None,
+                 raw_load: bool = True,
                  model_name: str = "craft") -> None:
         '''
             Initial definition for the LitOCRModel class.
@@ -35,6 +37,7 @@ class LitOCRModel(pl.LightningModule):
                 verbose - a boolean representing whether to print the printables.
                 freeze - a boolean representing whether to freeze the model.
                 saved_model - a string representing the path to the saved model.
+                raw_load - a boolean representing whether to load the actual (original) model.
                 model_name - name of the model.
             Returns: None.
         '''
@@ -50,7 +53,7 @@ class LitOCRModel(pl.LightningModule):
         self.freeze = freeze
         self.saved_model = saved_model
         self.model = self.get_model(model_name=model_name)
-        self.load_torch_model()
+        self.load_torch_model(raw_load=raw_load)
         if self.verbose:
             print("Model Summary:\n", self.model)
     
@@ -66,14 +69,25 @@ class LitOCRModel(pl.LightningModule):
         else:
             raise NotImplementedError(f"Model {model_name} not implemented.")
     
-    def load_torch_model(self) -> None:
+    def load_torch_model(self, raw_load: bool = True) -> None:
         '''
             This function loads a torch model.
-            Input params: None.
+            Input params:
+                raw_load - a boolean representing whether to load the actual (original) model.
             Returns: None.
         '''
         if self.saved_model is not None:
-            self.model.load_state_dict(torch.load(self.saved_model, map_location=torch.device("cpu")))
+            state_dict = torch.load(self.saved_model, map_location=torch.device("cpu"))
+            if raw_load:
+                start_idx = 0
+                new_state_dict = OrderedDict()
+                if list(state_dict.keys())[0].startswith("module"):
+                    start_idx = 1
+                for k, v in state_dict.items():
+                    name = ".".join(k.split(".")[start_idx: ])
+                    new_state_dict[name] = v
+                state_dict = new_state_dict
+            self.model.load_state_dict(state_dict)
             self.model.to(self.device)
             if self.verbose:
                 print(f"Model loaded from {self.saved_model}.")
