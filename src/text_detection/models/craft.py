@@ -47,14 +47,14 @@ class CRAFT(nn.Module):
             Returns: `x` - a tensor of shape (batch_size, channels, height, width).
         '''
         slice_1_out, slice_2_out, slice_3_out, slice_4_out, slice_5_out = self.basenet(x)
-        out = self.upconv2d_1(torch.cat((slice_5_out, slice_4_out), dim=1))
+        out = self.upconv1(torch.cat((slice_5_out, slice_4_out), dim=1))
         out = F.interpolate(out, size=slice_3_out.size()[2:], mode='bilinear', align_corners=False)
-        out = self.upconv2d_2(torch.cat((out, slice_3_out), dim=1))
+        out = self.upconv2(torch.cat((out, slice_3_out), dim=1))
         out = F.interpolate(out, size=slice_2_out.size()[2:], mode='bilinear', align_corners=False)
-        out = self.upconv2d_3(torch.cat((out, slice_2_out), dim=1))
+        out = self.upconv3(torch.cat((out, slice_2_out), dim=1))
         out = F.interpolate(out, size=slice_1_out.size()[2:], mode='bilinear', align_corners=False)
-        feature = self.upconv2d_4(torch.cat((out, slice_1_out), dim=1))
-        out = self.conv2d_final(feature)
+        feature = self.upconv4(torch.cat((out, slice_1_out), dim=1))
+        out = self.conv_cls(feature)
         return (out.permute(0, 2, 3, 1), feature)
 
 
