@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from datetime import datetime
 from collections import OrderedDict
-from .models.craft import CRAFT
+from models.craft import CRAFT
 
 
 class OCRModel:
@@ -19,10 +19,10 @@ class OCRModel:
     '''
 
     def __init__(self, 
-                 train_loader: object, 
-                 val_loader: object,
-                 test_loader: object,
-                 criterion: object,
+                 train_loader: object = None, 
+                 val_loader: object = None,
+                 test_loader: object = None,
+                 criterion: object = None,
                  epochs: int = 50,
                  device: str = "cpu",
                  save_model: bool = True,
@@ -78,8 +78,11 @@ class OCRModel:
         self.skip_train = False
         self.train_step_loss = {"x": [], "y": []}
         self.best_test_loss = np.inf
-        self.save_path = self.save_path_dir + self.model_name + ''.join(random.choices(string.ascii_uppercase + string.digits, k = 10)) + '.pth'
-        self.load_torch_model()
+        self.save_path = self.save_path_dir + \
+              self.model_name + \
+                ''.join(random.choices(string.ascii_uppercase + string.digits, k = 10)) + '.pth' \
+                    if self.save_path_dir is not None else None
+        _ = self.load_torch_model()
 
     def get_model(self, model_name: str) -> None:
         '''
@@ -93,11 +96,11 @@ class OCRModel:
         else:
             raise NotImplementedError(f"Model {model_name} not implemented.")
     
-    def load_torch_model(self) -> None:
+    def load_torch_model(self) -> object:
         '''
             This function loads a torch model.
             Input params: None
-            Returns: None.
+            Returns: a model object.
         '''
         self.model = self.get_model(model_name=self.model_name)
         if self.saved_model is not None:
@@ -122,6 +125,7 @@ class OCRModel:
             self.best_model = copy.deepcopy(self.model)
         else:
             print("No model loaded as `saved_model` not provided.")
+        return self.model
     
     def freeze(self) -> None:
         '''
@@ -132,7 +136,7 @@ class OCRModel:
         if self.trainable_layers is not None:
             self.skip_train = True
         for name, param in self.model.named_parameters():
-            if name in self.trainable_layers:
+            if self.trainable_layers and name in self.trainable_layers:
                 param.requires_grad = True
             else:
                 param.requires_grad = False

@@ -8,6 +8,9 @@ from PIL import Image
 from scipy.stats import norm
 
 
+def str2bool(v):
+    return v.lower() in ("yes", "Yes", "YES", "y", "true", "True", "TRUE", "t", "1")
+
 def get_annotated_file(image_path: str) -> str:
     '''
         Get annotated file path from image path.
