@@ -9,6 +9,9 @@ from scipy.stats import norm
 
 
 def str2bool(v):
+    '''
+        Convert string to boolean, basically used by the cmd parser.
+    '''
     return v.lower() in ("yes", "Yes", "YES", "y", "true", "True", "TRUE", "t", "1")
 
 def get_annotated_file(image_path: str) -> str:

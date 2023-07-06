@@ -9,7 +9,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from datetime import datetime
 from collections import OrderedDict
-from models.craft import CRAFT
+try: 
+    from .models.craft import CRAFT
+except Exception as e:
+    print("Following alternate import for net.py...")
+    from models.craft import CRAFT
 
 
 class OCRModel:

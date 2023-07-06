@@ -6,6 +6,8 @@ numpy
 pandas
 matplotlib
 opencv-python
+torch
+torchvision
 pytorch-lightning
 scipy
 networkx

@@ -7,11 +7,20 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from net import OCRModel
-from utils import normalize_image
+try: 
+    from .net import OCRModel
+    from .utils import normalize_image
+except Exception as e:
+    print("Following alternate import for inference.py...")
+    from net import OCRModel
+    from utils import normalize_image
 
 
 class Inference:
+
+    '''
+        This class is used to perform inference on the model.
+    '''
 
     def __init__(self,
                  saved_model: str,
@@ -29,6 +38,25 @@ class Inference:
                  cv2_dilate_iteration: int = 1,
                  detection_buffer: int = 2,
                  verbose: bool = True) -> None:
+        '''
+            Initialize the inference class.
+            Input params: 
+                saved_model: Path to saved model.
+                input_image_directory: Path to input image directory.
+                number_of_images_to_infer: Total number of images to process.
+                resize: Resize the input image to this size.
+                shuffle: Shuffle images in the aforementioned directory.
+                wrtie_output: Write output to disk - yes or no.
+                output_directory: Path to output directory that holds results.
+                model_name: Name of the model.
+                device: Device to use | 'cpu', 'cuda', 'mps'.
+                cv2_threshold_low: Low threshold for cv2 thresholding.
+                cv2_threshold_high: High threshold for cv2 thresholding.
+                cv2_dilate_kernel_size: Kernel size for cv2 dilate.
+                cv2_dilate_iteration: Number of iterations for cv2 dilate.
+                detection_buffer: Buffer to add to the bounding box.
+                verbose: Print verbose statements.
+        '''
         self.write_output = wrtie_output
         self.output_directory = output_directory
         self.cv2_threshold_low = cv2_threshold_low
@@ -57,12 +85,35 @@ class Inference:
         self.resize_tuple = resize
 
     def resize(self, image: object, size: tuple = (768, 768)) -> np.ndarray:
+        '''
+            Resize the image.
+            Input params: 
+                image: Image to resize.
+                size: Size to resize to.
+            Output params:
+                image: Resized image.
+        '''
         return np.asarray(image.resize((size[1], size[0])))
 
     def normalize(self, image: np.ndarray) -> np.ndarray:
+        '''
+            Normalize the image.
+            Input params:
+                image: Image to normalize.
+            Output params:
+                image: Normalized image.
+        '''
         return normalize_image(image=image)
 
     def get_bbox(self, image_path: str, region_map: np.ndarray) -> dict:
+        '''
+            Get bounding box for the image, given a region map.
+            Input params:
+                image_path: Path to image.
+                region_map: Region map for the image.
+            Output params:
+                detections: Bounding box for the image.
+        '''
         region_map *= 255.0
         region_map = region_map.astype(np.uint8)    
         _, region_map = cv2.threshold(region_map, self.cv2_threshold_low, self.cv2_threshold_high, cv2.THRESH_BINARY)
@@ -80,12 +131,12 @@ class Inference:
                 x_max = max(x_max, point[0][0])
                 y_max = max(y_max, point[0][1])
             detections[f"bbox_{idx+1}"] = { "actual_bbox": (
-                    (x_min - self.detection_buffer, y_min - self.detection_buffer),
-                    (x_max + self.detection_buffer, y_max + self.detection_buffer)
+                    (int(x_min - self.detection_buffer), int(y_min - self.detection_buffer)),
+                    (int(x_max + self.detection_buffer), int(y_max + self.detection_buffer))
                 ),
                 "normalized_bbox": (
-                    ((x_min - self.detection_buffer)/region_map.shape[1], (y_min - self.detection_buffer)/region_map.shape[0]),
-                    ((x_max + self.detection_buffer)/region_map.shape[1], (y_max + self.detection_buffer)/region_map.shape[0])
+                    (int(x_min - self.detection_buffer)/region_map.shape[1], int(y_min - self.detection_buffer)/region_map.shape[0]),
+                    (int(x_max + self.detection_buffer)/region_map.shape[1], int(y_max + self.detection_buffer)/region_map.shape[0])
                 )
             }
         if self.verbose:
@@ -100,7 +151,14 @@ class Inference:
         return detections
 
     def process_image(self, image_path: str) -> dict:
-        print(f"Processing image: {image_path}")
+        '''
+            Process the image.
+            Input params:
+                image_path: Path to image.
+            Output params:
+                detections: Bounding box for the image.
+        '''
+        print(f"\nProcessing image: {image_path}")
         # Get the image in model readable format.
         image = Image.open(image_path).convert("RGB")
         image = self.resize(image=image, size=self.resize_tuple)
@@ -118,6 +176,9 @@ class Inference:
         return detections
     
     def infer(self) -> None:
+        '''
+            Infer on the images.
+        '''
         print("Inferencing...")
         for image_path in self.images:
             detections = self.process_image(image_path=image_path)
