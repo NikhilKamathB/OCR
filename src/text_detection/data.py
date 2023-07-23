@@ -12,6 +12,7 @@ from .transforms import *
 class OCRDataset(Dataset):
 
     '''
+        Subject - Text Detection.
         This class is a wrapper around the dataset.
         It is used to provide a consistent way to iterate over datasets.
     '''
@@ -46,7 +47,7 @@ class OCRDataset(Dataset):
     def __getitem__(self, index) -> tuple:
         '''
             Input params: index - an integer representing the index of the instance to retrieve.
-            Returns: a tuple representing image, region and affitnity heatmap.
+            Returns: a tuple containing image, region and affitnity heatmap.
         '''
         raw_instance = self.data.iloc[index]
         instance = {

@@ -8,7 +8,7 @@ from PIL import Image
 from scipy.stats import norm
 
 
-def str2bool(v):
+def str2bool(v) -> bool:
     '''
         Convert string to boolean, basically used by the cmd parser.
     '''
@@ -24,7 +24,7 @@ def get_annotated_file(image_path: str) -> str:
     assert image_path is not None, 'Image path is None. Provide a valid image path.'
     return image_path.replace('.jpg', '_ocr.json')
 
-def split_data(df: pd.DataFrame, split_ratio: list = [0.6, 0.2]) -> tuple:
+def split_data(df: pd.DataFrame, split_ratio: list = [0.6, 0.2], random_state: int = 42) -> tuple:
     '''
         Split data into train, validation and test sets.
         Input params:
@@ -32,12 +32,13 @@ def split_data(df: pd.DataFrame, split_ratio: list = [0.6, 0.2]) -> tuple:
             split_ratio: list of split ratios. Total items in this list can be max 2, one corresponding
                         to train split and the other to validation split. Test split would
                         be the remaining. Sum of items in `split_ratio` must be less than 1.0.
+            random_state: int -> Random state to use for shuffling the dataframe.
         Returns: tuple of dataframes - (train, val) if length of `split_ratio` is 1 and (train, val, test)
                 if the length of `split_ratio` is 2.
     '''
     assert len(split_ratio) <= 2, 'Length of `split_ratio` must be less than or equal to 2.'
     assert sum(split_ratio) < 1.0, 'Sum of items in `split_ratio` must be less than 1.0.'
-    df = df.sample(frac=1, random_state=42)
+    df = df.sample(frac=1, random_state=random_state)
     train_split_ratio = split_ratio[0]
     if len(split_ratio) == 2:
         val_split_ratio = split_ratio[1]
