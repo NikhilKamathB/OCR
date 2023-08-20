@@ -65,7 +65,7 @@ def process_iam_handwriting_txt_files(file_path: str,
         with open(f"{'.'.join(file_path.split('.')[:-1])}{suffix}.txt", 'w') as file:
             file.writelines(processed_lines)
     else:
-        print(f"Skipped {file_path} processing as it already exists...")
+        print(f"Skipped {file_path} processing, as it already exists...")
     return f"{'.'.join(file_path.split('.')[:-1])}{suffix}.txt"
 
 def get_df(txt_file_name: str, columns: list) -> pd.DataFrame:

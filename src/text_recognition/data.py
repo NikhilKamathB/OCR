@@ -17,7 +17,8 @@ class TrOCRDataset(Dataset):
     '''
 
     def __init__(self, data: pd.DataFrame, processor: object = None, max_target_length: int = 128, 
-                 overfit: bool = False, overfit_batch_size: int = 32) -> None:
+                 overfit: bool = False, overfit_batch_size: int = 32,
+                 processor_pretrained_path: str = "microsoft/trocr-base-handwritten") -> None:
         '''
             Initial definition for the OCRDataset class.
             Input params:
@@ -29,11 +30,12 @@ class TrOCRDataset(Dataset):
                 max_target_length - an integer representing the maximum length of the target.
                 overfit - a boolean representing whether or not to overfit, i.e yielding same
                 overfit_batch_size - an integer representing the batch size to use for overfitting.
+                processor_pretrained_path - a string representing the path to the pretrained processor.
             Returns: None.
         '''
         super().__init__()
         self.data = data
-        self.processor = processor if processor is not None else TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
+        self.processor = processor if processor is not None else TrOCRProcessor.from_pretrained(processor_pretrained_path)
         self.max_target_length = max_target_length
         self.overfit = overfit
         self.overfit_batch_size = overfit_batch_size
@@ -50,20 +52,23 @@ class TrOCRDataset(Dataset):
     def __getitem__(self, index) -> tuple:
         '''
             Input params: index - an integer representing the index of the instance to retrieve.
-            Returns: a tuple containing image and its label.
+            Returns: a dict containing image and its label.
         '''
         raw_instance = self.data.iloc[index]
         instance = {
-            "image": Image.open(raw_instance.image_path).convert("RGB"),
-            "label": raw_instance.text
+            "pixel_values": Image.open(raw_instance.image_path).convert("RGB"),
+            "labels": raw_instance.text
         }
-        instance["image"] = self.processor(instance["image"], return_tensors="pt").pixel_values
-        instance["label"] = self.processor.tokenizer(instance["label"], padding="max_length", max_length=self.max_target_length).input_ids
-        instance["label"] = [
+        instance["pixel_values"] = self.processor(instance["pixel_values"], return_tensors="pt").pixel_values
+        instance["labels"] = self.processor.tokenizer(instance["labels"], padding="max_length", max_length=self.max_target_length).input_ids
+        instance["labels"] = [
             label if label != self.processor.tokenizer.pad_token_id else -100
-            for label in instance["label"]
+            for label in instance["labels"]
         ]                                      
-        return (instance["image"].squeeze() , torch.tensor(instance["label"]))
+        return {
+            "pixel_values": instance["pixel_values"].squeeze(), 
+            "labels": torch.tensor(instance["labels"])
+        }
 
 
 class TrOCRData:
@@ -79,6 +84,7 @@ class TrOCRData:
                  val_shuffle: bool = False,
                  test_shuffle: bool = False,
                  processor: object = None,
+                 processor_pretrained_path: str = "microsoft/trocr-base-handwritten",
                  max_target_length: int = 128, 
                  overfit: bool = False, 
                  overfit_batch_size: int = 32,
@@ -102,6 +108,7 @@ class TrOCRData:
                             it is a wrapper around the embedders.
                                 ViTFeatureExtractor - used to resize and normalize the image.
                                 RobertaTokenizer - used to tokenize the text | encode and decode the text.
+                processor_pretrained_path - a string representing the path to the pretrained processor.
                 max_target_length - an integer representing the maximum length of the target.
                 overfit - a boolean representing whether or not to overfit.
                 overfit_batch_size - an integer representing the batch size to use for overfitting.
@@ -119,7 +126,7 @@ class TrOCRData:
         self.train_shuffle = train_shuffle
         self.val_shuffle = val_shuffle
         self.test_shuffle = test_shuffle
-        self.processor = processor if processor is not None else TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
+        self.processor = processor if processor is not None else TrOCRProcessor.from_pretrained(processor_pretrained_path)
         self.max_target_length = max_target_length
         self.overfit = overfit
         self.overfit_batch_size = overfit_batch_size
@@ -148,9 +155,10 @@ class TrOCRData:
             Returns: None.
         '''
         train_loader, _, _ = self.get_data_loaders()
-        print(len(train_loader))
-        image, label = next(iter(train_loader))
-        image, label = image[0], label[0]
+        encoding = next(iter(train_loader))
+        print(f"Before squeezing the image size -> {encoding['pixel_values'].shape}")
+        print(f"Before squeezing the label size -> {encoding['labels'].shape}")
+        image, label = encoding["pixel_values"][0].squeeze(), encoding["labels"][0].squeeze()
         print(f"The input image size -> {image.shape}")
         print(f"The label size -> {label.shape}")
         label[label == -100] = self.processor.tokenizer.pad_token_id
