@@ -121,6 +121,7 @@ class OCRModel:
                 self.model.load_state_dict(state_dict)
             else:
                 self.model.load_state_dict(state_dict["model_state_dict"])
+            self.start_epoch = state_dict["epoch"]
             self.model.to(self.device)
             if self.verbose:
                 print(f"Model loaded from {self.saved_model}.")
@@ -274,6 +275,7 @@ class OCRModel:
         step_size = 0
         if self.skip_train:
             print("Skipping training as model params are all frozen.")
+            return (None, None)
         else:
             for epoch in range(self.start_epoch, self.epochs):
                 # Train phase
@@ -340,7 +342,7 @@ class OCRModel:
                 self.plot_step_loss_curve()
             if self.save_model:
                 self.save(model=self.best_model)
-        return self.model.to("cpu"), self.best_model.to("cpu")
+        return (self.model.to("cpu"), self.best_model.to("cpu"))
     
     def test(self):
         '''

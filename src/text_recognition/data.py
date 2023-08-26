@@ -16,7 +16,7 @@ class TrOCRDataset(Dataset):
         It is used to provide a consistent way to iterate over datasets.
     '''
 
-    def __init__(self, data: pd.DataFrame, processor: object = None, max_target_length: int = 128, 
+    def __init__(self, data: pd.DataFrame, processor: object = None, max_target_length: int = 150, 
                  overfit: bool = False, overfit_batch_size: int = 32,
                  processor_pretrained_path: str = "microsoft/trocr-base-handwritten") -> None:
         '''
@@ -64,7 +64,10 @@ class TrOCRDataset(Dataset):
         instance["labels"] = [
             label if label != self.processor.tokenizer.pad_token_id else -100
             for label in instance["labels"]
-        ]                                      
+        ]
+        if len(instance["labels"]) > self.max_target_length:
+            print(f"Clipping the labels from {len(instance['labels'])} to {self.max_target_length}")
+            instance["labels"] = instance["labels"][:self.max_target_length]
         return {
             "pixel_values": instance["pixel_values"].squeeze(), 
             "labels": torch.tensor(instance["labels"])
@@ -85,7 +88,7 @@ class TrOCRData:
                  test_shuffle: bool = False,
                  processor: object = None,
                  processor_pretrained_path: str = "microsoft/trocr-base-handwritten",
-                 max_target_length: int = 128, 
+                 max_target_length: int = 150, 
                  overfit: bool = False, 
                  overfit_batch_size: int = 32,
                  verbose: bool = False,
@@ -117,7 +120,7 @@ class TrOCRData:
                 pin_memory - a boolean representing whether or not to pin the memory.
             Returns: None.
         '''
-        self.train_df = train_df
+        self.train_df = train_df.loc[::-1]
         self.val_df = val_df
         self.test_df = test_df
         self.train_batch_size = train_batch_size
