@@ -121,7 +121,7 @@ class OCRModel:
                 self.model.load_state_dict(state_dict)
             else:
                 self.model.load_state_dict(state_dict["model_state_dict"])
-            self.start_epoch = state_dict["epoch"]
+            self.start_epoch = state_dict.get("epoch", 0)
             self.model.to(self.device)
             if self.verbose:
                 print(f"Model loaded from {self.saved_model}.")
@@ -252,7 +252,7 @@ class OCRModel:
         _, ax = plt.subplots(rows, columns, figsize=figsize)
         image_idx = 0
         for r in range(rows):
-            for c in range(0, columns, 3):
+            for c in range(0, columns, columns):
                 image = images_cpu[image_idx, :, :, :]
                 image = np.transpose(image, (1, 2, 0))
                 region_image = y_hat_cpu_numpy[image_idx, :, :, 0]

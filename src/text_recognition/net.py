@@ -4,7 +4,9 @@ import time
 import torch
 import string
 import random
+import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 from datetime import datetime
 from datasets import load_metric
 try: 
@@ -104,12 +106,12 @@ class OCRModel:
             if self.verbose:
                 print(f"Model loaded from {self.saved_model}.")
             self.start_epoch = state_dict["epoch"]
-            self.best_model = copy.deepcopy(self.model)
         else:
             print("No model loaded as `saved_model` not provided.")
         if self.freeze_model:
             if self.verbose: print("Freezing model...")
             self.freeze()
+        self.best_model = copy.deepcopy(self.model)
         return self.model
 
     def freeze(self) -> None:
@@ -227,6 +229,27 @@ class OCRModel:
             plt.ylabel('Step Loss')
             plt.legend()
             plt.show()
+    
+    def visualize_output(self, images: torch.Tensor, y_hat: torch.Tensor, number_of_subplots: int = 8, figsize: tuple=(7, 17) ) -> None:
+        '''
+            This function visualizes the output of the model.
+            Input params:
+                images - a torch.Tensor instance.
+                y_hat - a torch.Tensor instance.
+                number_of_subplots - an int representing the number of subplots.
+                figsize - a tuple representing the figure size.
+            Returns: None.
+        '''
+        images_cpu = images.cpu().detach().numpy()
+        y_hat_cpu_numpy = y_hat.cpu().detach().numpy()
+        y_hat_string = self.trocr_model.processor.batch_decode(y_hat_cpu_numpy, skip_special_tokens=True)
+        fig = plt.figure(figsize=figsize)
+        for i in range(number_of_subplots):
+            image = images_cpu[i, :, :, :]
+            image = np.transpose(image, (1, 2, 0))
+            plt.imshow(image, aspect=0.25)
+            plt.title(f"Predicted String | {y_hat_string[i]}")
+            plt.show()
 
     def train(self) -> None:
         print(f"\nDEVICE - {self.device} || EPOCHS - {self.epochs} || LEARNING RATE - {self.optimizer.param_groups[0]['lr']}.\n")
@@ -299,7 +322,27 @@ class OCRModel:
             return (self.model.to("cpu"), self.best_model.to("cpu"))
 
     def test(self) -> None:
-        pass
-
-    def metric(self) -> object:
-        pass
+        '''
+            This function tests the model.
+            Input params: None.
+            Returns: None.
+        '''
+        print("Testing model...")
+        self.best_model.eval()
+        self.best_model.to(self.device)
+        running_test_loss = 0
+        start_epoch_test_time = time.time()
+        verbose_images, verbose_y_hat = None, None
+        # Testing TrOCR model
+        if self.trocr_model is not None:
+            with torch.no_grad():
+                for step, (test_batch) in tqdm(enumerate(self.test_loader)):
+                    outputs = self.best_model.generate(test_batch["pixel_values"].to(self.device))
+                    cer = self.compute_cer(y_hat=outputs, y=test_batch["labels"])
+                    running_test_loss += cer
+                    if self.verbose and step == 0:
+                        verbose_images, verbose_y_hat = test_batch["pixel_values"], outputs
+                        break
+        print(f'\n TEST-LOSS - {(running_test_loss/len(self.test_loader)):.5f} || TIME ELAPSED - {(time.time() - start_epoch_test_time):.2f}s.\n')
+        if self.verbose:
+            self.visualize_output(images=verbose_images, y_hat=verbose_y_hat)
