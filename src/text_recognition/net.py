@@ -4,6 +4,7 @@ import time
 import torch
 import string
 import random
+import evaluate
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -65,7 +66,7 @@ class OCRModel:
         self.freeze_model = freeze_model
         self.trainable_layers = trainable_layers
         self.freeze_base = freeze_base
-        self.cer_metric = load_metric("cer")
+        self.cer_metric = evaluate.load("cer")
         self.trocr_model = None
         self.train_loss = []
         self.val_loss = []

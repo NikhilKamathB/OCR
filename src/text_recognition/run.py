@@ -13,14 +13,16 @@ def main(args):
         output_directory=args.output_directory,
         model_name=args.model_name,
         device=args.device,
+        processor_pretrained_path=args.trocr_processor_predifined_path,
         verbose=args.verbose
     ).infer()
 
 if __name__ == '__main__':
     # Fetch arguments from command line
-    parser = argparse.ArgumentParser(description='Text detection module.')
-    parser.add_argument("-m", "--model_name", type=str, default="craft", metavar='\b', help="Name of the model.")
+    parser = argparse.ArgumentParser(description='Text recognition module.')
+    parser.add_argument("-m", "--model_name", type=str, default="TrOCRModel", metavar='\b', help="Name of the model.")
     parser.add_argument("-p", "--trained_model_path", type=str, metavar='\b', help="Path to trained model.")
+    parser.add_argument("-pp", "--trocr_processor_predifined_path", default="microsoft/trocr-base-handwritten", type=str, metavar='\b', help="TrOCRProcessor predefined path.")
     parser.add_argument("-d", "--device", type=str, default="cpu", metavar='\b', help="Device to use | 'cpu', 'cuda', 'mps'.")
     parser.add_argument("-i", "--input_image_directory", type=str, metavar='\b', help="Path to input image directory.")
     parser.add_argument("-w", "--write_output", type=str2bool, default='n', metavar="\b", help="Write output to disk.")

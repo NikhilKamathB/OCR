@@ -173,7 +173,11 @@ class Inference:
         region_map, _ = output[0, :, :, 0], output[0, :, :, 1]
         # Get bounding boxes from the output for this image.
         detections = self.get_bbox(image_path=image_path, region_map=region_map)
-        return detections
+        return {
+            "image_name": os.path.basename(image_path),
+            "image_path": image_path,
+            "detections": detections
+        }
     
     def infer(self) -> None:
         '''
