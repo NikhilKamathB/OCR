@@ -27,7 +27,7 @@ class OCRModel:
                  device: str = "cpu",
                  save_model: bool = True,
                  save_path_dir: str = None,
-                 saved_model: str = None,
+                 saved_model: str = "microsoft/trocr-base-handwritten",
                  model_name: str = "TrOCRModel",
                  verbose = True, 
                  verbose_step = 50,
@@ -88,7 +88,7 @@ class OCRModel:
             Returns: None.
         '''
         if model_name == "TrOCRModel":
-            self.trocr_model = TrOCRModel(device=self.device)
+            self.trocr_model = TrOCRModel(device=self.device, pretrained_path=self.saved_model)
             return self.trocr_model.model
         else:
             raise NotImplementedError(f"Model {model_name} not implemented.")
@@ -100,15 +100,6 @@ class OCRModel:
             Returns: a model object.
         '''
         self.model = self.get_model(model_name=self.model_name)
-        if self.saved_model is not None:
-            state_dict = torch.load(self.saved_model, map_location=torch.device("cpu"))
-            self.model.load_state_dict(state_dict["model_state_dict"])
-            self.model.to(self.device)
-            if self.verbose:
-                print(f"Model loaded from {self.saved_model}.")
-            self.start_epoch = state_dict["epoch"]
-        else:
-            print("No model loaded as `saved_model` not provided.")
         if self.freeze_model:
             if self.verbose: print("Freezing model...")
             self.freeze()
