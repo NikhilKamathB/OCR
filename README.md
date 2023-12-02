@@ -1,5 +1,5 @@
 # OCR
-This an end-to-end pipeline for the task of optical character recognition. Following this, we will be having a web application delivering the service. The models in this pipeline will be trained on [ICDAR](https://rrc.cvc.uab.es/?ch=13&com=introduction) dataset and custom/private invoices.
+This an end-to-end pipeline for the task of optical character recognition. Following this, we will be having a web application delivering the service. It can be viewed [here](https://nikhilkb.com). The models in this pipeline will be trained on [ICDAR](https://rrc.cvc.uab.es/?ch=13&com=introduction) dataset and custom/private invoices.
 
 ## Objective
 Design an OCR from scratch. This will be further used to design web pages and potentially enhanced splitwise application.
@@ -7,7 +7,7 @@ Design an OCR from scratch. This will be further used to design web pages and po
 ## Prerequisites
 - Docker / Microk8s installed [currently not needed, may skip].
 - MLFlow: hosted on Docker / Microk8s [currently not needed, may skip].
-- GCP account: enable cloud vision API and Document AI API and setup appropriate service accounts [needed for /src/pre execution].
+- GCP account: enable cloud vision API and Document AI API and setup appropriate service accounts [needed for `/src/pre execution`].
 
 ## Folder Structure
 ```
@@ -40,6 +40,7 @@ OCR Repo.
     |- information-extraction (OCR pipeline - information extraction from the detected and recognized texts)
     |- pre (this folder containing scripts ought to be run before stepping into the OCR pipeline)
     |- text-detection (OCR pipeline - text detection in scene)
+    |- text-recognition (OCR pipeline - text recognition in scene)
 |- requirements.txt (pip requirements that must be installed prior to running this pipeline)
 ```
 
@@ -60,10 +61,12 @@ OCR Repo.
         - Imporve annotation script as per the model requirements.
     - References:
         - [CRAFT](https://github.com/clovaai/CRAFT-pytorch)
-- [ ]  Text Recognition AI Pipeline.
-- [ ]  Information Extraction AI Pipeline.
-- [ ]  Integration of Blocks.
-- [ ]  Web Application.
+- [X]  Text Recognition AI Pipeline.
+- [X]  Information Extraction AI Pipeline.
+- [X]  Integration of Blocks.
+- [X]  Web Application.
 
 ## Environment Variables
 * GOOGLE_APPLICATION_CREDENTIALS
+* HUGGINGFACEHUB_API_TOKEN
+* TOKENIZERS_PARALLELISM
