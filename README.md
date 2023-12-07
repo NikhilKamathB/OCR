@@ -46,21 +46,21 @@ OCR Repo.
 
 ## Tasks
 - [X]  Data acquisition.
-    - Download relevant datasets.
+    <!-- - Download relevant datasets.
     - `cd ./src/pre`, run `ocr-annotate.py` (for OCR) and `document-ai-annotate.py` (for Entity recognition) to generate true labels from GCP - Document AI service. This step is optional and we use it to run on our custom dataset.
-    - All out data is stored in GCS. Run the following command to download data (not accessible to the public) - `gsutil -m cp -r "gs://data-hangar/ocr/data" .`
+    - All out data is stored in GCS. Run the following command to download data (not accessible to the public) - `gsutil -m cp -r "gs://data-hangar/ocr/data" .` -->
 - [X]  Data Annotation/Preparation.
     - [X]  Text Detection.
     - [X]  Text Recognition.
     - [X]  Information Extraction.
 - [X]  Text Detection AI Pipeline.
-    - Model supported - CRAFT.
+    <!-- - Model supported - CRAFT.
     - This is the first version of text detection module. To run it, `cd ./src/text_detection`, and `python run.py -p <path-to-trained-model> -i <path-to-test-set>`. Further information on the parameters can be found by running `python run.py -h`.
     - There are few TODOs ought to be completed:
         - Image preprocessing to remove noise, blur and imporve contrast.
         - Imporve annotation script as per the model requirements.
     - References:
-        - [CRAFT](https://github.com/clovaai/CRAFT-pytorch)
+        - [CRAFT](https://github.com/clovaai/CRAFT-pytorch) -->
 - [X]  Text Recognition AI Pipeline.
 - [X]  Information Extraction AI Pipeline.
 - [X]  Integration of Blocks.
